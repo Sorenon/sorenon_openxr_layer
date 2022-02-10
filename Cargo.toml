@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "layer_entry",
+    "layer_core",
+    "graphics_interop",
+]

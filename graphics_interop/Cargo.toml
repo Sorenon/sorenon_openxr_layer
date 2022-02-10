@@ -1,0 +1,14 @@
+[package]
+name = "graphics_interop"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[build-dependencies]
+gl_generator = "0.14"
+
+[dependencies]
+ash = "0.35"
+glium = "0.31"
+lazy_static = "1.4"
+bimap = "0.6"
