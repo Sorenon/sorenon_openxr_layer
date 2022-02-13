@@ -91,6 +91,7 @@ where
             "GL_NV_conditional_render",
             "GL_NV_vertex_attrib_integer_64bit",
             "GL_EXT_memory_object_win32",
+            "GL_EXT_memory_object_fd",
         ],
     );
 

@@ -53,8 +53,15 @@ impl OpenGLInterop {
                 mem_obj,
                 size,
                 bindings::HANDLE_TYPE_OPAQUE_WIN32_EXT,
-                handle.0,
-            )
+                handle,
+            );
+            #[cfg(target_os = "linux")]
+            self.gl.ImportMemoryFdEXT(
+                mem_obj,
+                size,
+                bindings::HANDLE_TYPE_OPAQUE_FD_EXT,
+                handle,
+            );
         }
         if mem_obj == 0 {
             Err(unsafe { self.gl.GetError() })

@@ -47,6 +47,32 @@ impl SwapchainBackendVulkan {
         let mut memory = Vec::with_capacity(runtime_images.len());
         let mut images = Vec::with_capacity(runtime_images.len());
 
+        let cb_memory_barrier = unsafe {
+            *vk_backend
+                .device
+                .allocate_command_buffers(&vk::CommandBufferAllocateInfo {
+                    command_pool: vk_backend.command_pool,
+                    level: vk::CommandBufferLevel::PRIMARY,
+                    command_buffer_count: 1,
+                    ..Default::default()
+                })
+                .unwrap()
+                .first()
+                .unwrap()
+        };
+        unsafe {
+            vk_backend
+                .device
+                .begin_command_buffer(
+                    cb_memory_barrier,
+                    &vk::CommandBufferBeginInfo {
+                        flags: vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+        }
+
         for i in 0..runtime_images.len() {
             images.push(
                 vk_backend
@@ -60,6 +86,52 @@ impl SwapchainBackendVulkan {
                     .alloc_and_bind_external_image(images[i])
                     .unwrap(),
             );
+
+            unsafe {
+                vk_backend.device.cmd_pipeline_barrier(
+                    cb_memory_barrier,
+                    vk::PipelineStageFlags::TOP_OF_PIPE,
+                    vk::PipelineStageFlags::TOP_OF_PIPE,
+                    vk::DependencyFlags::empty(),
+                    &[],
+                    &[],
+                    &[vk::ImageMemoryBarrier {
+                        new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+                        image: images[i],
+                        subresource_range: vk::ImageSubresourceRange {
+                            aspect_mask: vk::ImageAspectFlags::COLOR,
+                            level_count: 1,
+                            layer_count: 1,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    }],
+                );
+            }
+        }
+
+        unsafe {
+            vk_backend
+                .device
+                .end_command_buffer(cb_memory_barrier)
+                .unwrap();
+            vk_backend
+                .device
+                .queue_submit(
+                    vk_backend.graphics_queue,
+                    &[vk::SubmitInfo::builder()
+                        .command_buffers(std::slice::from_ref(&cb_memory_barrier))
+                        .build()],
+                    vk::Fence::null(),
+                )
+                .unwrap();
+            vk_backend
+                .device
+                .queue_wait_idle(vk_backend.graphics_queue)
+                .unwrap();
+            vk_backend
+                .device
+                .free_command_buffers(vk_backend.command_pool, &[cb_memory_barrier]);
         }
 
         let (pipeline_layout, render_pass, pipeline) = unsafe {
@@ -156,32 +228,34 @@ impl SwapchainBackendVulkan {
         for (i, &command_buffer) in command_buffers.iter().enumerate() {
             let framebuffer = framebuffers[i];
             let set = descriptor_sets[i];
-            let image = images[i];
             unsafe {
                 vk_backend
                     .device
                     .begin_command_buffer(command_buffer, &vk::CommandBufferBeginInfo::default())
                     .unwrap();
-                vk_backend.device.cmd_pipeline_barrier(
-                    command_buffer,
-                    vk::PipelineStageFlags::TOP_OF_PIPE,
-                    vk::PipelineStageFlags::FRAGMENT_SHADER,
-                    vk::DependencyFlags::empty(),
-                    &[],
-                    &[],
-                    &[vk::ImageMemoryBarrier {
-                        dst_access_mask: vk::AccessFlags::SHADER_READ,
-                        new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                        image,
-                        subresource_range: vk::ImageSubresourceRange {
-                            aspect_mask: vk::ImageAspectFlags::COLOR,
-                            level_count: 1,
-                            layer_count: 1,
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    }],
-                );
+                //On my Manjaro Linux install with proprietary Nvidia drivers this causes the interop image to be entirely black
+                //This issue has not been tested on any other machines so its disabled by default
+                // #[cfg(windows)]
+                // vk_backend.device.cmd_pipeline_barrier(
+                //     command_buffer,
+                //     vk::PipelineStageFlags::TOP_OF_PIPE,
+                //     vk::PipelineStageFlags::FRAGMENT_SHADER,
+                //     vk::DependencyFlags::empty(),
+                //     &[],
+                //     &[],
+                //     &[vk::ImageMemoryBarrier {
+                //         dst_access_mask: vk::AccessFlags::SHADER_READ,
+                //         new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+                //         image: images[i],
+                //         subresource_range: vk::ImageSubresourceRange {
+                //             aspect_mask: vk::ImageAspectFlags::COLOR,
+                //             level_count: 1,
+                //             layer_count: 1,
+                //             ..Default::default()
+                //         },
+                //         ..Default::default()
+                //     }],
+                // );
                 vk_backend.device.cmd_begin_render_pass(
                     command_buffer,
                     &vk::RenderPassBeginInfo::builder()

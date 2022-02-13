@@ -122,14 +122,34 @@ fn create_session(
             xr::StructureType::GRAPHICS_BINDING_D3D12_KHR => GraphicsBinding::Other,
             xr::StructureType::GRAPHICS_BINDING_EGL_MNDX => todo!(),
             xr::StructureType::GRAPHICS_BINDING_OPENGL_WIN32_KHR => {
-                let binding: &xr::GraphicsBindingOpenGLWin32KHR =
-                    std::mem::transmute(create_info.next);
-                GraphicsBinding::OpenGL(GLContext::Wgl(platform::windows::WGL::load(
-                    binding.h_dc,
-                    binding.h_glrc,
-                )))
+                #[cfg(windows)]
+                {
+                    let binding: &xr::GraphicsBindingOpenGLWin32KHR =
+                        std::mem::transmute(create_info.next);
+                    GraphicsBinding::OpenGL(GLContext::Wgl(platform::windows::WGL::load(
+                        binding.h_dc,
+                        binding.h_glrc,
+                    )))
+                }
+                #[cfg(target_os = "linux")]
+                todo!()
             }
-            xr::StructureType::GRAPHICS_BINDING_OPENGL_XLIB_KHR => todo!(),
+            xr::StructureType::GRAPHICS_BINDING_OPENGL_XLIB_KHR => {
+                #[cfg(target_os = "linux")]
+                {
+                    let binding: &xr::GraphicsBindingOpenGLXlibKHR =
+                        std::mem::transmute(create_info.next);
+                    GraphicsBinding::OpenGL(GLContext::X11(platform::linux::X11::load(
+                        binding.x_display as _,
+                        binding.visualid,
+                        binding.glx_fb_config,
+                        binding.glx_drawable,
+                        binding.glx_context,
+                    )))
+                }
+                #[cfg(windows)]
+                todo!()
+            }
             xr::StructureType::GRAPHICS_BINDING_OPENGL_XCB_KHR => todo!(),
             xr::StructureType::GRAPHICS_BINDING_OPENGL_WAYLAND_KHR => todo!(),
             xr::StructureType::GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR => todo!(),

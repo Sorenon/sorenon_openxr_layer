@@ -36,5 +36,8 @@ pub enum ImageFormat {
     Depth16Unorm,
 }
 
-#[derive(Clone, Copy)]
-pub struct InteropHandle(#[cfg(target_os = "windows")] pub std::os::windows::raw::HANDLE);
+#[cfg(target_os = "windows")] 
+pub type InteropHandle = std::os::windows::raw::HANDLE;
+
+#[cfg(target_os = "linux")] 
+pub type InteropHandle = i32;

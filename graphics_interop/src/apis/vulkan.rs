@@ -36,10 +36,10 @@ pub unsafe fn needed_instance_extensions() -> Vec<*const i8> {
 pub unsafe fn needed_device_extensions() -> Vec<*const i8> {
     vec![
         vk::KhrExternalMemoryFn::name().as_ptr(),
+        #[cfg(target_os = "windows")]
         vk::KhrExternalMemoryWin32Fn::name().as_ptr(),
-        vk::KhrExternalSemaphoreFn::name().as_ptr(),
-        vk::KhrExternalSemaphoreWin32Fn::name().as_ptr(),
-        // ash::extensions::khr::GetMemoryRequirements2::name().as_ptr(),
+        #[cfg(target_os = "linux")]
+        vk::KhrExternalMemoryFdFn::name().as_ptr(),
     ]
 }
 
@@ -62,11 +62,19 @@ impl VulkanInterop {
             unsafe { instance.get_physical_device_memory_properties(physical_device) };
 
         #[cfg(target_os = "windows")]
-        let win32_ext_mem_loader = unsafe {
+        let khr_external_memory = unsafe {
             let load_fn = |name: &std::ffi::CStr| {
                 std::mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
             };
             vk::KhrExternalMemoryWin32Fn::load(load_fn)
+        };
+
+        let khr_external_memory = unsafe {
+            let load_fn = |name: &std::ffi::CStr| {
+                std::mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
+            };
+            #[cfg(target_os = "linux")]
+            vk::KhrExternalMemoryFdFn::load(load_fn)
         };
 
         Self {
@@ -74,8 +82,7 @@ impl VulkanInterop {
             // physical_device,
             device_memory_properties,
             device: device.clone(),
-            #[cfg(target_os = "windows")]
-            khr_external_memory: win32_ext_mem_loader,
+            khr_external_memory,
         }
     }
 
@@ -84,7 +91,10 @@ impl VulkanInterop {
         image_create_info: &crate::ImageCreateInfo,
     ) -> VkResult<vk::Image> {
         let export_info = vk::ExternalMemoryImageCreateInfo {
+            #[cfg(target_os = "windows")]
             handle_types: vk::ExternalMemoryHandleTypeFlags::OPAQUE_WIN32,
+            #[cfg(target_os = "linux")]
+            handle_types: vk::ExternalMemoryHandleTypeFlags::OPAQUE_FD,
             ..Default::default()
         };
 
@@ -121,8 +131,13 @@ impl VulkanInterop {
             .find_memory_type_index(&texture_memory_req, vk::MemoryPropertyFlags::DEVICE_LOCAL)
             .expect("Unable to find suitable memory index for depth image.");
 
+        #[cfg(windows)]
         let export_mem_alloc_info = vk::ExportMemoryAllocateInfo::builder()
             .handle_types(vk::ExternalMemoryHandleTypeFlags::OPAQUE_WIN32)
+            .build();
+        #[cfg(target_os = "linux")]
+        let export_mem_alloc_info = vk::ExportMemoryAllocateInfo::builder()
+            .handle_types(vk::ExternalMemoryHandleTypeFlags::OPAQUE_FD)
             .build();
 
         let texture_allocate_info = vk::MemoryAllocateInfo {
@@ -156,20 +171,36 @@ impl VulkanInterop {
     }
 
     pub fn get_external_memory_handle(&self, memory: vk::DeviceMemory) -> VkResult<InteropHandle> {
-        let win32_handle_info = vk::MemoryGetWin32HandleInfoKHR::builder()
-            .memory(memory)
-            .handle_type(vk::ExternalMemoryHandleTypeFlags::OPAQUE_WIN32)
-            .build();
-
-        let mut handle = std::ptr::null_mut();
-
+        #[cfg(target_os = "windows")]
         unsafe {
+            let mut handle = std::ptr::null_mut();
+
+            let win32_handle_info = vk::MemoryGetWin32HandleInfoKHR::builder()
+                .memory(memory)
+                .handle_type(vk::ExternalMemoryHandleTypeFlags::OPAQUE_WIN32)
+                .build();
+
             self.khr_external_memory
                 .get_memory_win32_handle_khr(self.device.handle(), &win32_handle_info, &mut handle)
                 .result()?;
+            Ok(handle)
         }
 
-        Ok(InteropHandle(handle))
+        #[cfg(target_os = "linux")]
+        unsafe {
+            let mut handle = 0;
+
+            let handle_info = vk::MemoryGetFdInfoKHR::builder()
+                .memory(memory)
+                .handle_type(vk::ExternalMemoryHandleTypeFlags::OPAQUE_FD)
+                .build();
+
+            self.khr_external_memory
+                .get_memory_fd_khr(self.device.handle(), &handle_info, &mut handle)
+                .result()?;
+
+            Ok(handle)
+        }
     }
 }
 

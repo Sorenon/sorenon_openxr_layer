@@ -30,4 +30,5 @@ features = [
 ]
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd"))'.dependencies]
-glutin_glx_sys = "0.1.7"
+glutin_glx_sys = "0.1"
+libloading = "0.7"

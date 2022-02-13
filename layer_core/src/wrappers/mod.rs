@@ -45,13 +45,13 @@ pub trait XrHandle {
     {
         match std::panic::catch_unwind(|| {
             let wrapper = match Self::all_wrappers().get(&self) {
-                Some(wrapper_ref) => wrapper_ref.value(),
+                Some(wrapper_ref) => wrapper_ref,
                 None => return xr::Result::ERROR_HANDLE_INVALID,
             };
             if wrapper.inner_instance().poison.load(Ordering::Relaxed) {
                 xr::Result::ERROR_INSTANCE_LOST
             } else {
-                match f(wrapper) {
+                match f(wrapper.value()) {
                     Ok(res) => res,
                     Err(res) => res,
                 }
