@@ -24,10 +24,16 @@ There are some notable areas that can be improved. Mainly using an interop semep
 - https://github.com/ValveSoftware/SteamVR-for-Linux/issues/461
 - https://github.com/ValveSoftware/SteamVR-for-Linux/issues/479
 
+## Installation instructions
+- Install the [Rust toolchain](https://www.rust-lang.org/tools/install)
+- Clone this repository
+- Install with `cargo run --release`
+- Uninstall with `cargo run --release uninstall`
+
 ## Current TODO:
 - [x] OpenGL Frontend
 - [x] Vulkan Backend
-- [ ] Linux Installer
+- [x] Linux Installer
 - [ ] Correctly handle sRGB formats
 - [ ] Investigate improving performance
 
