@@ -20,7 +20,9 @@ There are some notable areas that can be improved. Mainly using an interop semep
 - https://github.com/ValveSoftware/SteamVR-for-Linux/issues/466
 
 ## Does not fix:
-- https://github.com/ValveSoftware/SteamVR-for-Linux/issues/422<br>^ Is it possible to fix this by calling xrDestroyInstance in a new thread?
+- General system wide deadlocks caused by SteamVR
+- SteamVR's overall worse performance compared to Monado
+- https://github.com/ValveSoftware/SteamVR-for-Linux/issues/422<br>^ Is it possible to fix this by calling xrDestroyInstance in its own thread?
 - https://github.com/ValveSoftware/SteamVR-for-Linux/issues/461
 - https://github.com/ValveSoftware/SteamVR-for-Linux/issues/479
 
