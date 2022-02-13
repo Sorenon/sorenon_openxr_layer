@@ -1,3 +1,4 @@
+use core::slice;
 use std::{borrow::Cow, ffi::CStr, io::Cursor, os::raw::c_char};
 
 use ash::{
@@ -165,7 +166,7 @@ impl VkBackend {
             .queue_priorities(&[1.0]);
 
         let device_info = vk::DeviceCreateInfo::builder()
-            .queue_create_infos(std::slice::from_ref(&queue_info))
+            .queue_create_infos(slice::from_ref(&queue_info))
             .enabled_extension_names(&[]);
 
         let device = if let Some(vulkan) = exts.khr_vulkan_enable2 {
@@ -231,7 +232,7 @@ impl VkBackend {
                 ..Default::default()
             };
             let layout_info = vk::DescriptorSetLayoutCreateInfo::builder()
-                .bindings(std::slice::from_ref(&sampler_layout_binding));
+                .bindings(slice::from_ref(&sampler_layout_binding));
             device.create_descriptor_set_layout(&layout_info, None)
         }
         .unwrap();
@@ -269,27 +270,6 @@ impl VkBackend {
                     && memory_type.property_flags & flags == flags
             })
             .map(|(index, _memory_type)| index as _)
-    }
-
-    pub fn record_submit_commandbuffer<F: FnOnce(&Device, vk::CommandBuffer)>(
-        &self,
-        command_buffer: vk::CommandBuffer,
-        command_buffer_reuse_fence: vk::Fence,
-        wait_mask: &[vk::PipelineStageFlags],
-        wait_semaphores: &[vk::Semaphore],
-        signal_semaphores: &[vk::Semaphore],
-        f: F,
-    ) {
-        record_submit_commandbuffer(
-            &self.device,
-            command_buffer,
-            command_buffer_reuse_fence,
-            self.graphics_queue,
-            wait_mask,
-            wait_semaphores,
-            signal_semaphores,
-            f,
-        )
     }
 
     pub fn create_image_view(
@@ -362,8 +342,8 @@ impl VkBackend {
         };
 
         let viewport_state = vk::PipelineViewportStateCreateInfo::builder()
-            .viewports(&[viewport])
-            .scissors(&[scissor])
+            .viewports(slice::from_ref(&viewport))
+            .scissors(slice::from_ref(&scissor))
             .build();
 
         let rasterizer = vk::PipelineRasterizationStateCreateInfo::builder()
@@ -402,10 +382,15 @@ impl VkBackend {
             .color_blend_state(&color_blending)
             .layout(layout)
             .render_pass(render_pass)
-            .subpass(0);
+            .subpass(0)
+            .build();
 
         let pipeline = *device
-            .create_graphics_pipelines(vk::PipelineCache::null(), &[*pipeline_info], None)
+            .create_graphics_pipelines(
+                vk::PipelineCache::null(),
+                slice::from_ref(&pipeline_info),
+                None,
+            )
             .unwrap()
             .first()
             .unwrap();
@@ -426,66 +411,6 @@ impl Drop for VkBackend {
                 .destroy_debug_utils_messenger(self.debug_messenger, None);
             self.instance.destroy_instance(None);
         }
-    }
-}
-
-/// Helper function for submitting command buffers. Immediately waits for the fence before the command buffer
-/// is executed. That way we can delay the waiting for the fences by 1 frame which is good for performance.
-/// Make sure to create the fence in a signaled state on the first use.
-#[allow(clippy::too_many_arguments)]
-pub fn record_submit_commandbuffer<F: FnOnce(&Device, vk::CommandBuffer)>(
-    device: &Device,
-    command_buffer: vk::CommandBuffer,
-    command_buffer_reuse_fence: vk::Fence,
-    submit_queue: vk::Queue,
-    wait_mask: &[vk::PipelineStageFlags],
-    wait_semaphores: &[vk::Semaphore],
-    signal_semaphores: &[vk::Semaphore],
-    f: F,
-) {
-    unsafe {
-        // device
-        //     .wait_for_fences(&[command_buffer_reuse_fence], true, std::u64::MAX)
-        //     .expect("Wait for fence failed.");
-
-        // device
-        //     .reset_fences(&[command_buffer_reuse_fence])
-        //     .expect("Reset fences failed.");
-
-        device
-            .reset_command_buffer(
-                command_buffer,
-                vk::CommandBufferResetFlags::RELEASE_RESOURCES,
-            )
-            .expect("Reset command buffer failed.");
-
-        let command_buffer_begin_info = vk::CommandBufferBeginInfo::builder()
-            .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
-
-        device
-            .begin_command_buffer(command_buffer, &command_buffer_begin_info)
-            .expect("Begin commandbuffer");
-        f(device, command_buffer);
-        device
-            .end_command_buffer(command_buffer)
-            .expect("End commandbuffer");
-
-        let command_buffers = vec![command_buffer];
-
-        let submit_info = vk::SubmitInfo::builder()
-            .wait_semaphores(wait_semaphores)
-            .wait_dst_stage_mask(wait_mask)
-            .command_buffers(&command_buffers)
-            .signal_semaphores(signal_semaphores);
-
-        device
-            .queue_submit(
-                submit_queue,
-                &[submit_info.build()],
-                // command_buffer_reuse_fence,
-                vk::Fence::null(),
-            )
-            .expect("queue submit failed.");
     }
 }
 
@@ -598,11 +523,11 @@ unsafe fn create_render_pass(
 
     let subpass = vk::SubpassDescription::builder()
         .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
-        .color_attachments(std::slice::from_ref(&attachment_ref));
+        .color_attachments(slice::from_ref(&attachment_ref));
 
     let render_pass_info = vk::RenderPassCreateInfo::builder()
-        .attachments(std::slice::from_ref(&color_attachment))
-        .subpasses(std::slice::from_ref(&subpass));
+        .attachments(slice::from_ref(&color_attachment))
+        .subpasses(slice::from_ref(&subpass));
 
     device.create_render_pass(&render_pass_info, None)
 }

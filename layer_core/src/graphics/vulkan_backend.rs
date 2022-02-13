@@ -1,3 +1,4 @@
+use core::slice;
 use std::sync::Arc;
 
 use ash::{
@@ -209,7 +210,6 @@ impl SwapchainBackendVulkan {
                 sampler: vk_backend.nearest_sampler,
                 image_view,
                 image_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                // image_layout: vk::ImageLayout::GENERAL,
             };
             let descriptor_write = vk::WriteDescriptorSet::builder()
                 .dst_set(set)
@@ -331,8 +331,9 @@ impl SwapchainBackend for SwapchainBackendVulkan {
                 .device
                 .queue_submit(
                     self.vk_backend.graphics_queue,
-                    std::slice::from_ref(
-                        &vk::SubmitInfo::builder().command_buffers(&[self.command_buffers[index]]),
+                    slice::from_ref(
+                        &vk::SubmitInfo::builder()
+                            .command_buffers(slice::from_ref(&self.command_buffers[index])),
                     ),
                     vk::Fence::null(),
                 )
