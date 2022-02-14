@@ -76,25 +76,32 @@ fn create_swapchain(
         frontend, backend, ..
     } = &session.graphics
     {
+        //TODO SRGB
         let format = ImageFormat::from_gl(create_info.format as u32)
             .ok_or(xr::Result::ERROR_SWAPCHAIN_FORMAT_UNSUPPORTED)?;
+
+        assert_eq!(create_info.sample_count, 1);
+        assert_eq!(create_info.face_count, 1);
+        assert_eq!(create_info.mip_count, 1);
+        assert!(create_info.array_size <= 32);
+        assert!(create_info.create_flags.is_empty());
+        assert!(create_info.next.is_null());
 
         let create_info2 = xr::SwapchainCreateInfo {
             ty: xr::SwapchainCreateInfo::TYPE,
             next: std::ptr::null(),
-            create_flags: xr::SwapchainCreateFlags::EMPTY, //TODO
-            // usage_flags: xr::SwapchainUsageFlags::TRANSFER_DST,
+            create_flags: xr::SwapchainCreateFlags::EMPTY,
             usage_flags: xr::SwapchainUsageFlags::COLOR_ATTACHMENT,
             format: format
                 .to_vk()
                 .ok_or(xr::Result::ERROR_SWAPCHAIN_FORMAT_UNSUPPORTED)?
                 .as_raw() as i64,
-            sample_count: create_info.sample_count,
+            sample_count: 1,
             width: create_info.width,
             height: create_info.height,
-            face_count: create_info.face_count,
+            face_count: 1,
             array_size: create_info.array_size,
-            mip_count: create_info.mip_count,
+            mip_count: 1,
         };
 
         unsafe {
@@ -107,6 +114,7 @@ fn create_swapchain(
             height: create_info.height,
             mip_count: create_info.mip_count,
             sample_count: create_info.sample_count,
+            layers: create_info.array_size,
             format,
         };
 
@@ -135,6 +143,7 @@ fn create_swapchain(
             acquired_images: Default::default(),
             width: create_info.width,
             height: create_info.height,
+            layers: create_info.array_size,
         })
     } else {
         unsafe {
@@ -149,6 +158,7 @@ fn create_swapchain(
             acquired_images: Default::default(),
             width: create_info.width,
             height: create_info.height,
+            layers: create_info.array_size,
         })
     };
 

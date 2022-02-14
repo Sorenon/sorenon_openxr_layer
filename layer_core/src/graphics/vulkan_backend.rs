@@ -102,7 +102,7 @@ impl SwapchainBackendVulkan {
                         subresource_range: vk::ImageSubresourceRange {
                             aspect_mask: vk::ImageAspectFlags::COLOR,
                             level_count: 1,
-                            layer_count: 1,
+                            layer_count: image_info.layers,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -147,13 +147,25 @@ impl SwapchainBackendVulkan {
 
         let image_views = images
             .iter()
-            .map(|&image| vk_backend.create_image_view(image, image_info.format.to_vk().unwrap()))
+            .map(|&image| {
+                vk_backend.create_image_view(
+                    image,
+                    image_info.format.to_vk().unwrap(),
+                    image_info.layers,
+                )
+            })
             .collect::<VkResult<Vec<_>>>()
             .unwrap();
 
         let runtime_image_views = runtime_images
             .iter()
-            .map(|&image| vk_backend.create_image_view(image, image_info.format.to_vk().unwrap()))
+            .map(|&image| {
+                vk_backend.create_image_view(
+                    image,
+                    image_info.format.to_vk().unwrap(),
+                    image_info.layers,
+                )
+            })
             .collect::<VkResult<Vec<_>>>()
             .unwrap();
 
@@ -165,7 +177,7 @@ impl SwapchainBackendVulkan {
                     .attachments(std::slice::from_ref(image_view))
                     .width(image_info.width)
                     .height(image_info.height)
-                    .layers(1);
+                    .layers(image_info.layers);
                 unsafe { vk_backend.device.create_framebuffer(&create_info, None) }
             })
             .collect::<VkResult<Vec<_>>>()
@@ -283,7 +295,7 @@ impl SwapchainBackendVulkan {
                     std::slice::from_ref(&set),
                     &[],
                 );
-                vk_backend.device.cmd_draw(command_buffer, 3, 1, 0, 0);
+                vk_backend.device.cmd_draw(command_buffer, 3, image_info.layers, 0, 0);
                 vk_backend.device.cmd_end_render_pass(command_buffer);
                 vk_backend
                     .device

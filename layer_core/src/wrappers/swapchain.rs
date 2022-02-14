@@ -16,6 +16,7 @@ pub struct SwapchainWrapper {
     pub inner: Arc<InnerInstance>,
     pub width: u32,
     pub height: u32,
+    pub layers: u32,
     pub graphics: SwapchainGraphics,
     pub acquired_images: Mutex<RefCell<VecDeque<u32>>>,
 }

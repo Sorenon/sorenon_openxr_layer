@@ -150,15 +150,22 @@ impl VkBackend {
             })
             .expect("Vulkan device has no graphics queue");
 
-        let device_extension_names = graphics_interop::apis::vulkan::needed_device_extensions();
+        let mut device_extension_names = graphics_interop::apis::vulkan::needed_device_extensions();
+        device_extension_names.push(vk::ExtShaderViewportIndexLayerFn::name().as_ptr());
 
         let queue_info = vk::DeviceQueueCreateInfo::builder()
             .queue_family_index(graphics_queue_family)
             .queue_priorities(&[1.0]);
 
+        let features = vk::PhysicalDeviceFeatures {
+            multi_viewport: vk::TRUE,
+            ..Default::default()
+        };
+
         let device_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(slice::from_ref(&queue_info))
-            .enabled_extension_names(&device_extension_names[..]);
+            .enabled_extension_names(&device_extension_names[..])
+            .enabled_features(&features);
 
         let device = if let Some(vulkan) = exts.khr_vulkan_enable2 {
             let mut device = vk::Device::null();
@@ -267,10 +274,11 @@ impl VkBackend {
         &self,
         image: vk::Image,
         format: vk::Format,
+        layers: u32,
     ) -> VkResult<vk::ImageView> {
         let create_info = vk::ImageViewCreateInfo::builder()
             .image(image)
-            .view_type(vk::ImageViewType::TYPE_2D)
+            .view_type(vk::ImageViewType::TYPE_2D_ARRAY)
             .format(format)
             .components(vk::ComponentMapping {
                 r: vk::ComponentSwizzle::IDENTITY,
@@ -283,7 +291,7 @@ impl VkBackend {
                 base_mip_level: 0,
                 level_count: 1,
                 base_array_layer: 0,
-                layer_count: 1,
+                layer_count: layers,
             });
         unsafe { self.device.create_image_view(&create_info, None) }
     }

@@ -4,7 +4,7 @@ pub mod apis;
 pub struct ImageCreateInfo {
     pub width: u32,
     pub height: u32,
-    // pub depth: u32,
+    pub layers: u32,
     pub mip_count: u32,
     pub sample_count: u32,
     pub format: ImageFormat,

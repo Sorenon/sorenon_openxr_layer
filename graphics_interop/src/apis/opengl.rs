@@ -57,12 +57,8 @@ impl OpenGLInterop {
                 handle,
             );
             #[cfg(target_os = "linux")]
-            self.gl.ImportMemoryFdEXT(
-                mem_obj,
-                size,
-                bindings::HANDLE_TYPE_OPAQUE_FD_EXT,
-                handle,
-            );
+            self.gl
+                .ImportMemoryFdEXT(mem_obj, size, bindings::HANDLE_TYPE_OPAQUE_FD_EXT, handle);
         }
         if mem_obj == 0 {
             Err(unsafe { self.gl.GetError() })
@@ -79,19 +75,37 @@ impl OpenGLInterop {
     ) -> GlResult<u32> {
         let mut texture = 0;
 
-        unsafe {
-            self.gl
-                .CreateTextures(bindings::TEXTURE_2D, 1, &mut texture);
-            self.gl.TextureStorageMem2DEXT(
-                texture,
-                create_info.mip_count as i32,
-                create_info.format.to_gl().unwrap(),
-                create_info.width as i32,
-                create_info.height as i32,
-                mem_obj,
-                offset,
-            );
+        if create_info.layers == 1 {
+            unsafe {
+                self.gl
+                    .CreateTextures(bindings::TEXTURE_2D, 1, &mut texture);
+                self.gl.TextureStorageMem2DEXT(
+                    texture,
+                    create_info.mip_count as i32,
+                    create_info.format.to_gl().unwrap(),
+                    create_info.width as i32,
+                    create_info.height as i32,
+                    mem_obj,
+                    offset,
+                );
+            }
+        } else {
+            unsafe {
+                self.gl
+                    .CreateTextures(bindings::TEXTURE_2D_ARRAY, 1, &mut texture);
+                self.gl.TextureStorageMem3DEXT(
+                    texture,
+                    create_info.mip_count as i32,
+                    create_info.format.to_gl().unwrap(),
+                    create_info.width as i32,
+                    create_info.height as i32,
+                    create_info.layers as i32,
+                    mem_obj,
+                    offset,
+                );
+            }
         }
+
         if texture == 0 {
             Err(unsafe { self.gl.GetError() })
         } else {
@@ -102,10 +116,10 @@ impl OpenGLInterop {
 
 impl ImageFormat {
     pub fn to_gl(&self) -> Option<u32> {
-        GL_FORMATS.get_by_left(&self).map(|i| *i)
+        GL_FORMATS.get_by_left(self).copied()
     }
 
     pub fn from_gl(gl_format: u32) -> Option<Self> {
-        GL_FORMATS.get_by_right(&gl_format).map(|i| *i)
+        GL_FORMATS.get_by_right(&gl_format).copied()
     }
 }

@@ -26,14 +26,14 @@ lazy_static::lazy_static! {
     };
 }
 
-pub unsafe fn needed_instance_extensions() -> Vec<*const i8> {
+pub fn needed_instance_extensions() -> Vec<*const i8> {
     vec![
         vk::KhrExternalMemoryCapabilitiesFn::name().as_ptr(),
         vk::KhrExternalSemaphoreCapabilitiesFn::name().as_ptr(),
     ]
 }
 
-pub unsafe fn needed_device_extensions() -> Vec<*const i8> {
+pub fn needed_device_extensions() -> Vec<*const i8> {
     vec![
         vk::KhrExternalMemoryFn::name().as_ptr(),
         #[cfg(target_os = "windows")]
@@ -78,8 +78,6 @@ impl VulkanInterop {
         };
 
         Self {
-            // instance,
-            // physical_device,
             device_memory_properties,
             device: device.clone(),
             khr_external_memory,
@@ -107,8 +105,8 @@ impl VulkanInterop {
                 height: image_create_info.height,
                 depth: 1,
             },
-            mip_levels: 1,
-            array_layers: 1,
+            mip_levels: image_create_info.mip_count,
+            array_layers: image_create_info.layers,
             samples: vk::SampleCountFlags::TYPE_1,
             tiling: vk::ImageTiling::OPTIMAL,
             usage: vk::ImageUsageFlags::TRANSFER_DST
@@ -206,10 +204,10 @@ impl VulkanInterop {
 
 impl ImageFormat {
     pub fn to_vk(&self) -> Option<vk::Format> {
-        VK_FORMATS.get_by_left(&self).map(|i| *i)
+        VK_FORMATS.get_by_left(self).copied()
     }
 
     pub fn from_vk(gl_format: vk::Format) -> Option<Self> {
-        VK_FORMATS.get_by_right(&gl_format).map(|i| *i)
+        VK_FORMATS.get_by_right(&gl_format).copied()
     }
 }
