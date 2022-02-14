@@ -41,6 +41,7 @@ fn install() {
         panic!("Could not find layer at `{}`\nTry building crate in release mode (cargo run --release)", layer_path)
     }
     let path = manifest_path().unwrap();
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     let mut file = File::create(&path).unwrap();
     file.write_all(json_contents(&layer_path).as_bytes())
         .unwrap();
