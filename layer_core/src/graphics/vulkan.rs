@@ -74,8 +74,13 @@ impl VkBackend {
 
         let instance_info = vk::InstanceCreateInfo::builder()
             .application_info(&app_info)
-            .enabled_layer_names(&layers_names_raw)
             .enabled_extension_names(&instance_extensions);
+
+        // let instance_info = if option_env!("SORENON_LAYER_VK_VALIDATION").is_some() {
+        //     instance_info.enabled_layer_names(&layers_names_raw)
+        // } else {
+        //     instance_info
+        // };
 
         let vk_instance = if let Some(vulkan) = exts.khr_vulkan_enable2 {
             let mut vk_instance = vk::Instance::null();

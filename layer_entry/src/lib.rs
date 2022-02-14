@@ -1,9 +1,12 @@
-use std::ffi::CStr;
+use std::{ffi::CStr, fs::File, sync::atomic::AtomicBool, path::Path};
 
 use layer_core::loader_interfaces::*;
 use log::{debug, error, info};
 use openxr::sys as xr;
 use simplelog::*;
+
+//TODO set up a safer logging system
+static LOGGER_LOADED: AtomicBool = AtomicBool::new(false);
 
 #[no_mangle]
 #[allow(clippy::missing_safety_doc)]
@@ -12,16 +15,22 @@ pub unsafe extern "system" fn xrNegotiateLoaderApiLayerInterface(
     layer_name: *const i8,
     layer_request: *mut XrNegotiateApiLayerRequest,
 ) -> xr::Result {
-    CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Debug,
-            Config::default(),
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        // WriteLogger::new(LevelFilter::Info, Config::default(), File::create("").unwrap()),
-    ])
-    .unwrap();
+    if !LOGGER_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
+        let workspace_path = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+
+        CombinedLogger::init(vec![
+            TermLogger::new(
+                LevelFilter::Debug,
+                Config::default(),
+                TerminalMode::Mixed,
+                ColorChoice::Auto,
+            ),
+            WriteLogger::new(LevelFilter::Info, Config::default(), File::create(workspace_path.join("log.txt")).unwrap()),
+        ])
+        .unwrap();
+
+        LOGGER_LOADED.store(true, std::sync::atomic::Ordering::Relaxed)
+    }
 
     info!("Initializing layer");
 
