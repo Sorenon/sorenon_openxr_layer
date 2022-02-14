@@ -1,7 +1,7 @@
 {
     "file_format_version" : "1.0.0",
     "api_layer": {
-        "name": "SORENON_OPENXR_LAYER",
+        "name": "XR_APILAYER_SORENON_compat_layer",
         "library_path": ".\\target\\debug\\layer_entry.dll",
         "api_version" : "1.0",
         "implementation_version" : "1",

@@ -67,7 +67,7 @@ fn json_contents(shared_lib_path: &str) -> String {
     let str = r#"{
     "file_format_version" : "1.0.0",
     "api_layer": {
-        "name": "SORENON_OPENXR_LAYER",
+        "name": "XR_APILAYER_SORENON_compat_layer",
         "library_path": ""#
         .to_owned()
         + shared_lib_path
