@@ -101,14 +101,14 @@ fn create_session(
     let opengl_override = true;
 
     unsafe {
-        if create_info.next != std::ptr::null() {
-            let next: &xr::BaseInStructure = std::mem::transmute(create_info.next);
+        if !create_info.next.is_null() {
+            let next: *const xr::BaseInStructure = std::mem::transmute(create_info.next);
 
-            if next.next != std::ptr::null() {
+            if !(*next).next.is_null() {
                 todo!();
             }
 
-            needs_compat = match next.ty {
+            needs_compat = match (*next).ty {
                 xr::StructureType::GRAPHICS_BINDING_D3D11_KHR => false,
                 xr::StructureType::GRAPHICS_BINDING_D3D12_KHR => false,
                 xr::StructureType::GRAPHICS_BINDING_EGL_MNDX => opengl_override,
@@ -126,14 +126,14 @@ fn create_session(
     let session_wrapper = if needs_compat {
         let opengl_context = unsafe {
             use crate::graphics::opengl::*;
-            let next: &xr::BaseInStructure = std::mem::transmute(create_info.next);
-            match next.ty {
+            let next: *const xr::BaseInStructure = std::mem::transmute(create_info.next);
+            match (*next).ty {
                 xr::StructureType::GRAPHICS_BINDING_EGL_MNDX => todo!(),
                 xr::StructureType::GRAPHICS_BINDING_OPENGL_WIN32_KHR => {
                     #[cfg(windows)]
                     {
-                        let binding: &xr::GraphicsBindingOpenGLWin32KHR =
-                            unsafe { std::mem::transmute(create_info.next) };
+                        let binding =
+                            &*(create_info.next as *const xr::GraphicsBindingOpenGLWin32KHR);
                         GLContext::Wgl(platform::windows::WGL::load(binding.h_dc, binding.h_glrc))
                     }
                     #[cfg(target_os = "linux")]
@@ -142,8 +142,8 @@ fn create_session(
                 xr::StructureType::GRAPHICS_BINDING_OPENGL_XLIB_KHR => {
                     #[cfg(target_os = "linux")]
                     {
-                        let binding: &xr::GraphicsBindingOpenGLXlibKHR =
-                            std::mem::transmute(create_info.next);
+                        let binding =
+                            &*(create_info.next as *const xr::GraphicsBindingOpenGLXlibKHR);
                         GLContext::X11(platform::linux::X11 {
                             x_display: binding.x_display as _,
                             visualid: binding.visualid,
@@ -174,7 +174,7 @@ fn create_session(
         opengl_context.make_current();
 
         let vk_backend = unsafe {
-            vulkan::VkBackend::new_openxr(&instance, create_info.system_id).map_err(|_| {
+            vulkan::VkBackend::new_openxr(instance, create_info.system_id).map_err(|_| {
                 error!("Backend vulkan base creation failed");
                 xr::Result::ERROR_RUNTIME_FAILURE
             })?

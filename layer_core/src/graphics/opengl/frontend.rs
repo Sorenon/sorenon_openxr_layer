@@ -31,7 +31,7 @@ pub struct SwapchainFrontendOpenGL {
 
 impl SwapchainFrontendOpenGL {
     pub fn load(
-        handles: &Vec<(graphics_interop::InteropHandle, u64)>,
+        handles: &[(graphics_interop::InteropHandle, u64)],
         opengl: Arc<OpenGLFrontend>,
         image_info: &graphics_interop::ImageCreateInfo,
     ) -> Self {
@@ -67,7 +67,7 @@ impl SwapchainFrontend for SwapchainFrontendOpenGL {
             if (capacity as usize) < self.images.len() {
                 return Err(xr::Result::ERROR_SIZE_INSUFFICIENT);
             }
-            if out == std::ptr::null_mut() {
+            if out.is_null() {
                 return Err(xr::Result::ERROR_VALIDATION_FAILURE);
             }
             let slice: &mut [xr::SwapchainImageOpenGLKHR] =
@@ -79,7 +79,7 @@ impl SwapchainFrontend for SwapchainFrontendOpenGL {
                 image_out.image = self.images[i];
             }
         }
-        if count_output == std::ptr::null_mut() {
+        if count_output.is_null() {
             return Err(xr::Result::ERROR_VALIDATION_FAILURE);
         }
         *count_output = self.images.len() as u32;

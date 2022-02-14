@@ -42,7 +42,8 @@ fn install() {
     }
     let path = manifest_path().unwrap();
     let mut file = File::create(&path).unwrap();
-    file.write(json_contents(&layer_path).as_bytes()).unwrap();
+    file.write_all(json_contents(&layer_path).as_bytes())
+        .unwrap();
     println!("Successfully installed layer in `{}`", path.display());
 }
 
@@ -64,7 +65,7 @@ fn manifest_path() -> Option<PathBuf> {
 }
 
 fn json_contents(shared_lib_path: &str) -> String {
-    let str = r#"{
+r#"{
     "file_format_version" : "1.0.0",
     "api_layer": {
         "name": "XR_APILAYER_SORENON_compat_layer",
@@ -83,6 +84,5 @@ fn json_contents(shared_lib_path: &str) -> String {
         ],
         "disable_environment": "DISABLE_SORENON_OPENXR_LAYER"
     }
-}"#;
-    String::from(str)
+}"#
 }

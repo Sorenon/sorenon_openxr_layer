@@ -13,14 +13,6 @@ use openxr::sys as xr;
 
 use crate::{wrappers::instance::InstanceWrapper, ToResult};
 
-pub struct VkBinding {
-    pub instance: vk::Instance,
-    pub physical_device: vk::PhysicalDevice,
-    pub device: vk::Device,
-    pub queue_family_index: u32,
-    pub queue_index: u32,
-}
-
 pub struct VkBackend {
     pub entry: Entry,
     pub instance: Instance,
@@ -312,12 +304,12 @@ impl VkBackend {
             vk::PipelineShaderStageCreateInfo::builder()
                 .stage(vk::ShaderStageFlags::VERTEX)
                 .module(vert_shader)
-                .name(&CStr::from_bytes_with_nul_unchecked(b"main\0"))
+                .name(CStr::from_bytes_with_nul_unchecked(b"main\0"))
                 .build(),
             vk::PipelineShaderStageCreateInfo::builder()
                 .stage(vk::ShaderStageFlags::FRAGMENT)
                 .module(frag_shader)
-                .name(&CStr::from_bytes_with_nul_unchecked(b"main\0"))
+                .name(CStr::from_bytes_with_nul_unchecked(b"main\0"))
                 .build(),
         ];
 
@@ -463,7 +455,7 @@ unsafe fn create_debug_callback(
         )
         .pfn_user_callback(Some(vulkan_debug_callback));
 
-    let debug_utils_loader = DebugUtils::new(&entry, &instance);
+    let debug_utils_loader = DebugUtils::new(entry, instance);
     let messenger = debug_utils_loader.create_debug_utils_messenger(&debug_info, None)?;
     Ok((debug_utils_loader, messenger))
 }
@@ -476,25 +468,11 @@ unsafe fn create_command_pool(device: &Device, queue_family: u32) -> VkResult<vk
     device.create_command_pool(&pool_create_info, None)
 }
 
-pub unsafe fn allocate_command_buffer(
-    device: &Device,
-    command_pool: vk::CommandPool,
-) -> VkResult<vk::CommandBuffer> {
-    let command_buffer_allocate_info = vk::CommandBufferAllocateInfo::builder()
-        .command_buffer_count(1)
-        .command_pool(command_pool)
-        .level(vk::CommandBufferLevel::PRIMARY);
-
-    device
-        .allocate_command_buffers(&command_buffer_allocate_info)
-        .map(|vec| *vec.first().unwrap())
-}
-
 const VERTEX: &[u8] = include_bytes!("../../../shaders/vert.spv");
 const FRAGMENT: &[u8] = include_bytes!("../../../shaders/frag.spv");
 
 unsafe fn create_shader_module(device: &Device, code_bytes: &[u8]) -> VkResult<vk::ShaderModule> {
-    let shader_code = ash::util::read_spv(&mut Cursor::new(&code_bytes[..])).unwrap();
+    let shader_code = ash::util::read_spv(&mut Cursor::new(code_bytes)).unwrap();
 
     let create_info = vk::ShaderModuleCreateInfo::builder().code(&shader_code);
     device.create_shader_module(&create_info, None)

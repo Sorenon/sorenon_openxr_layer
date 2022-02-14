@@ -8,7 +8,7 @@ use openxr::sys::platform::*;
 //TODO android?
 
 #[derive(Debug)]
-pub struct EGL {
+pub struct Egl {
     // pub get_proc_address: PFNEGLGETPROCADDRESSPROC,
     pub display: EGLDisplay,
     pub config: EGLConfig,

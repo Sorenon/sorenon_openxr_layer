@@ -78,7 +78,7 @@ impl SwapchainBackendVulkan {
             images.push(
                 vk_backend
                     .interop
-                    .create_external_image(&image_info)
+                    .create_external_image(image_info)
                     .unwrap(),
             );
             memory.push(

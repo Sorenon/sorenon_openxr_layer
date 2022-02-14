@@ -45,7 +45,7 @@ pub(crate) unsafe extern "system" fn xr_enumerate_swapchain_formats(
                 format_capacity_input,
                 format_count_output,
                 formats,
-                &swapchain_formats,
+                swapchain_formats,
             )
         } else {
             (session.inner.core.enumerate_swapchain_formats)(

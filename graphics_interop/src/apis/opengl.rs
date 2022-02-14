@@ -3,6 +3,7 @@ use std::ffi::c_void;
 use crate::{ImageCreateInfo, ImageFormat, InteropHandle};
 
 pub(crate) mod bindings {
+    #![allow(clippy::all)]
     include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
 }
 

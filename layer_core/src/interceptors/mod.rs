@@ -63,13 +63,13 @@ unsafe fn enumerate<T: Copy>(
         if (capacity as usize) < data.len() {
             return Err(xr::Result::ERROR_SIZE_INSUFFICIENT);
         }
-        if out == std::ptr::null_mut() {
+        if out.is_null() {
             return Err(xr::Result::ERROR_VALIDATION_FAILURE);
         }
         let slice = std::slice::from_raw_parts_mut(out, data.len());
         slice.copy_from_slice(data);
     }
-    if count_output == std::ptr::null_mut() {
+    if count_output.is_null() {
         return Err(xr::Result::ERROR_VALIDATION_FAILURE);
     }
     *count_output = data.len() as u32;
