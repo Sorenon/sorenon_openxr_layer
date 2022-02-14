@@ -29,23 +29,6 @@ pub enum SessionGraphics {
     },
 }
 
-impl SessionWrapper {
-    pub fn new_direct(
-        instance: &Arc<InstanceWrapper>,
-        create_info: &xr::SessionCreateInfo,
-    ) -> openxr::Result<Self> {
-        let mut handle = xr::Session::NULL;
-        unsafe { (instance.inner.core.create_session)(instance.handle, create_info, &mut handle) }
-            .result2(SessionWrapper {
-            handle: handle,
-            instance: Arc::downgrade(instance),
-            inner: instance.inner.clone(),
-            graphics: SessionGraphics::Direct,
-            swapchains: Default::default(),
-        })
-    }
-}
-
 impl XrWrapper for SessionWrapper {
     fn inner_instance(&self) -> &Arc<InnerInstance> {
         &self.inner

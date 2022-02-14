@@ -1,5 +1,7 @@
 use std::ffi::{c_void, CString};
 
+use lazy_static::lazy_static;
+
 pub enum GLContext {
     EGl,
     X11(X11),
@@ -33,8 +35,42 @@ impl GLContext {
 
 use glutin_glx_sys::glx as glx_sys;
 
+struct Glx {
+    inner: glx_sys::Glx,
+    _lib: libloading::Library,
+}
+
+impl std::ops::Deref for Glx {
+    type Target = glx_sys::Glx;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+unsafe impl Sync for Glx {}
+
+lazy_static! {
+    static ref GLX: Option<Glx> = {
+        vec!["libGL.so.1", "libGL.so"]
+            .iter()
+            .find_map(|path| unsafe { libloading::Library::new(path).ok() })
+            .map(|lib| {
+                let glx = glx_sys::Glx::load_with(|name| unsafe {
+                    let addr = CString::new(name.as_bytes()).unwrap();
+                    lib.get(addr.as_bytes())
+                        .map(|ptr| *ptr)
+                        .unwrap_or(std::ptr::null())
+                });
+                Glx {
+                    inner: glx,
+                    _lib: lib,
+                }
+            })
+    };
+}
+
 pub struct X11 {
-    pub glx: glx_sys::Glx,
     pub x_display: *mut glx_sys::types::Display,
     pub visualid: u32,
     pub glx_fb_config: glx_sys::types::GLXFBConfig,
@@ -43,42 +79,14 @@ pub struct X11 {
 }
 
 impl X11 {
-    pub fn load(
-        x_display: *mut glx_sys::types::Display,
-        visualid: u32,
-        glx_fb_config: glx_sys::types::GLXFBConfig,
-        glx_drawable: glx_sys::types::GLXDrawable,
-        glx_context: glx_sys::types::GLXContext,
-    ) -> Self {
-        let paths = vec!["libGL.so.1", "libGL.so"];
-
-        let lib = paths
-            .iter()
-            .find_map(|path| unsafe { libloading::Library::new(path).ok() })
-            .unwrap();
-
-        Self {
-            glx: glx_sys::Glx::load_with(|name| unsafe {
-                let addr = CString::new(name.as_bytes()).unwrap();
-                lib.get(addr.as_bytes())
-                    .map(|ptr| *ptr)
-                    .unwrap_or(std::ptr::null())
-            }),
-            x_display,
-            visualid,
-            glx_fb_config,
-            glx_drawable,
-            glx_context,
-        }
-    }
-
     unsafe fn make_current(&self) {
-        self.glx
+        GLX.as_deref()
+            .unwrap()
             .MakeCurrent(self.x_display, self.glx_drawable, self.glx_context);
     }
 
     unsafe fn get_proc_address(&self, name: &str) -> *const c_void {
         let addr = CString::new(name.as_bytes()).unwrap();
-        self.glx.GetProcAddress(addr.as_ptr() as _) as _
+        GLX.as_deref().unwrap().GetProcAddress(addr.as_ptr() as _) as _
     }
 }

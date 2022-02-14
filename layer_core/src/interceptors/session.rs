@@ -72,7 +72,7 @@ fn create_swapchain(
     create_info: &xr::SwapchainCreateInfo,
     swapchain: &mut xr::Swapchain,
 ) -> Result<xr::Result> {
-    if let SessionGraphics::Compat {
+    let swapchain_wrapper = if let SessionGraphics::Compat {
         frontend, backend, ..
     } = &session.graphics
     {
@@ -97,7 +97,7 @@ fn create_swapchain(
             mip_count: create_info.mip_count,
         };
 
-        let success = unsafe {
+        unsafe {
             (session.inner.core.create_swapchain)(session.handle, &create_info2, swapchain)
                 .result()?
         };
@@ -123,7 +123,7 @@ fn create_swapchain(
             &interop_info,
         );
 
-        let swapchain_wrapper = Arc::new(SwapchainWrapper {
+        Arc::new(SwapchainWrapper {
             handle: *swapchain,
             session: Arc::downgrade(session),
             inner: session.inner.clone(),
@@ -135,16 +135,26 @@ fn create_swapchain(
             acquired_images: Default::default(),
             width: create_info.width,
             height: create_info.height,
-        });
-
-        xr::Swapchain::all_wrappers().insert(*swapchain, swapchain_wrapper.clone());
-        session.swapchains.insert(*swapchain, swapchain_wrapper);
-        info!("Swapchain created: {:?}", *swapchain);
-
-        Ok(success)
+        })
     } else {
         unsafe {
-            (session.inner.core.create_swapchain)(session.handle, create_info, swapchain).result()
+            (session.inner.core.create_swapchain)(session.handle, create_info, swapchain)
+                .result()?;
         }
-    }
+        Arc::new(SwapchainWrapper {
+            handle: *swapchain,
+            session: Arc::downgrade(session),
+            inner: session.inner.clone(),
+            graphics: SwapchainGraphics::Direct,
+            acquired_images: Default::default(),
+            width: create_info.width,
+            height: create_info.height,
+        })
+    };
+
+    xr::Swapchain::all_wrappers().insert(*swapchain, swapchain_wrapper.clone());
+    session.swapchains.insert(*swapchain, swapchain_wrapper);
+    info!("Swapchain created: {:?}", *swapchain);
+
+    Ok(xr::Result::SUCCESS)
 }

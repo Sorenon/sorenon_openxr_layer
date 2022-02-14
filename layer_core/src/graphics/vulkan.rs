@@ -158,8 +158,7 @@ impl VkBackend {
             })
             .expect("Vulkan device has no graphics queue");
 
-        // let device_extension_names_raw = [];
-        // let mut device_extension_names_raw = graphics_interop::apis::vulkan::needed_device_extensions();
+        let device_extension_names = graphics_interop::apis::vulkan::needed_device_extensions();
 
         let queue_info = vk::DeviceQueueCreateInfo::builder()
             .queue_family_index(graphics_queue_family)
@@ -167,7 +166,7 @@ impl VkBackend {
 
         let device_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(slice::from_ref(&queue_info))
-            .enabled_extension_names(&[]);
+            .enabled_extension_names(&device_extension_names[..]);
 
         let device = if let Some(vulkan) = exts.khr_vulkan_enable2 {
             let mut device = vk::Device::null();

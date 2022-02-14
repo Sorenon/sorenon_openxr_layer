@@ -96,69 +96,71 @@ fn create_session(
     create_info: &xr::SessionCreateInfo,
     session: &mut xr::Session,
 ) -> Result<xr::Result> {
-    use crate::graphics::opengl::*;
-    enum GraphicsBinding {
-        OpenGL(GLContext),
-        // Vulkan(VkBinding),
-        Other,
+    let mut needs_compat = false;
+
+    let opengl_override = true;
+
+    unsafe {
+        if create_info.next != std::ptr::null() {
+            let next: &xr::BaseInStructure = std::mem::transmute(create_info.next);
+
+            if next.next != std::ptr::null() {
+                todo!();
+            }
+
+            needs_compat = match next.ty {
+                xr::StructureType::GRAPHICS_BINDING_D3D11_KHR => false,
+                xr::StructureType::GRAPHICS_BINDING_D3D12_KHR => false,
+                xr::StructureType::GRAPHICS_BINDING_EGL_MNDX => opengl_override,
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_WIN32_KHR => opengl_override,
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_XLIB_KHR => opengl_override,
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_XCB_KHR => opengl_override,
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_WAYLAND_KHR => opengl_override,
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR => opengl_override,
+                xr::StructureType::GRAPHICS_BINDING_VULKAN_KHR => false,
+                _ => false,
+            };
+        }
     }
 
-    let graphics = unsafe {
-        if create_info.next == std::ptr::null() {
-            if instance.inner.exts.mnd_headless.is_some() {
-                todo!()
-            } else {
-                return Err(xr::Result::ERROR_VALIDATION_FAILURE);
-            }
-        }
-
-        let next: &xr::BaseInStructure = std::mem::transmute(create_info.next);
-        if next.next != std::ptr::null() {
-            todo!()
-        }
-
-        match next.ty {
-            xr::StructureType::GRAPHICS_BINDING_D3D11_KHR => GraphicsBinding::Other,
-            xr::StructureType::GRAPHICS_BINDING_D3D12_KHR => GraphicsBinding::Other,
-            xr::StructureType::GRAPHICS_BINDING_EGL_MNDX => todo!(),
-            xr::StructureType::GRAPHICS_BINDING_OPENGL_WIN32_KHR => {
-                #[cfg(windows)]
-                {
-                    let binding: &xr::GraphicsBindingOpenGLWin32KHR =
-                        std::mem::transmute(create_info.next);
-                    GraphicsBinding::OpenGL(GLContext::Wgl(platform::windows::WGL::load(
-                        binding.h_dc,
-                        binding.h_glrc,
-                    )))
+    let session_wrapper = if needs_compat {
+        let opengl_context = unsafe {
+            use crate::graphics::opengl::*;
+            let next: &xr::BaseInStructure = std::mem::transmute(create_info.next);
+            match next.ty {
+                xr::StructureType::GRAPHICS_BINDING_EGL_MNDX => todo!(),
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_WIN32_KHR => {
+                    #[cfg(windows)]
+                    {
+                        let binding: &xr::GraphicsBindingOpenGLWin32KHR =
+                            unsafe { std::mem::transmute(create_info.next) };
+                        GLContext::Wgl(platform::windows::WGL::load(binding.h_dc, binding.h_glrc))
+                    }
+                    #[cfg(target_os = "linux")]
+                    todo!()
                 }
-                #[cfg(target_os = "linux")]
-                todo!()
-            }
-            xr::StructureType::GRAPHICS_BINDING_OPENGL_XLIB_KHR => {
-                #[cfg(target_os = "linux")]
-                {
-                    let binding: &xr::GraphicsBindingOpenGLXlibKHR =
-                        std::mem::transmute(create_info.next);
-                    GraphicsBinding::OpenGL(GLContext::X11(platform::linux::X11::load(
-                        binding.x_display as _,
-                        binding.visualid,
-                        binding.glx_fb_config,
-                        binding.glx_drawable,
-                        binding.glx_context,
-                    )))
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_XLIB_KHR => {
+                    #[cfg(target_os = "linux")]
+                    {
+                        let binding: &xr::GraphicsBindingOpenGLXlibKHR =
+                            std::mem::transmute(create_info.next);
+                        GLContext::X11(platform::linux::X11 {
+                            x_display: binding.x_display as _,
+                            visualid: binding.visualid,
+                            glx_fb_config: binding.glx_fb_config,
+                            glx_drawable: binding.glx_drawable,
+                            glx_context: binding.glx_context,
+                        })
+                    }
+                    #[cfg(windows)]
+                    todo!()
                 }
-                #[cfg(windows)]
-                todo!()
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_XCB_KHR => todo!(),
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_WAYLAND_KHR => todo!(),
+                xr::StructureType::GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR => todo!(),
+                _ => unreachable!(),
             }
-            xr::StructureType::GRAPHICS_BINDING_OPENGL_XCB_KHR => todo!(),
-            xr::StructureType::GRAPHICS_BINDING_OPENGL_WAYLAND_KHR => todo!(),
-            xr::StructureType::GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR => todo!(),
-            xr::StructureType::GRAPHICS_BINDING_VULKAN_KHR => GraphicsBinding::Other,
-            _ => todo!(),
-        }
-    };
-
-    let session_wrapper = if let GraphicsBinding::OpenGL(opengl_context) = graphics {
+        };
         if !instance
             .systems
             .get(&create_info.system_id)
@@ -228,9 +230,18 @@ fn create_session(
             swapchains: Default::default(),
         })
     } else {
-        Arc::new(SessionWrapper::new_direct(instance, create_info)?)
+        unsafe { (instance.inner.core.create_session)(instance.handle, create_info, session) }
+            .result()?;
+        Arc::new(SessionWrapper {
+            handle: *session,
+            instance: Arc::downgrade(instance),
+            inner: instance.inner.clone(),
+            graphics: SessionGraphics::Direct,
+            swapchains: Default::default(),
+        })
     };
 
+    *session = session_wrapper.handle;
     xr::Session::all_wrappers().insert(*session, session_wrapper.clone());
     instance.sessions.insert(*session, session_wrapper);
     info!("Session created: {:?}", *session);
