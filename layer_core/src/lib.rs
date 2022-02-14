@@ -7,7 +7,7 @@ pub mod wrappers;
 
 use openxr::sys as xr;
 
-pub const LAYER_NAME: &str = "SORENON_OPENXR_LAYER";
+pub const LAYER_NAME: &str = "XR_APILAYER_SORENON_compat_layer";
 
 pub fn static_initialize() -> (
     xr::pfn::GetInstanceProcAddr,
