@@ -3,7 +3,7 @@ use std::sync::{Arc, Weak};
 use dashmap::DashMap;
 use openxr::sys as xr;
 
-use crate::{ToResult, graphics::{vulkan, opengl::frontend::OpenGLFrontend}};
+use crate::{graphics::{vulkan, opengl::frontend::OpenGLFrontend}};
 
 use super::{
     instance::{InnerInstance, InstanceWrapper},

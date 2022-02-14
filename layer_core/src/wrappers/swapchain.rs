@@ -5,6 +5,7 @@ use std::{
 };
 
 use dashmap::DashMap;
+use log::error;
 use openxr::sys as xr;
 
 use super::{instance::InnerInstance, session::SessionWrapper, XrHandle, XrWrapper};
@@ -61,7 +62,17 @@ impl Drop for SwapchainWrapper {
             for &(handle, _) in interop {
                 #[cfg(target_os = "windows")]
                 unsafe {
-                    winapi::um::handleapi::CloseHandle(handle.0);
+                    winapi::um::handleapi::CloseHandle(handle);
+                }
+                #[cfg(target_os = "linux")]
+                unsafe {
+                    if libc::close(handle) == -1 {
+                        error!(
+                            "Failed to close swapchain fd `{}` with error `{:X}`",
+                            handle,
+                            *libc::__errno_location()
+                        )
+                    }
                 }
             }
             backend.destroy();
