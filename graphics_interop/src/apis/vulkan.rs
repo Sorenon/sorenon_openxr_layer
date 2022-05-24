@@ -61,20 +61,18 @@ impl VulkanInterop {
         let device_memory_properties =
             unsafe { instance.get_physical_device_memory_properties(physical_device) };
 
-        #[cfg(target_os = "windows")]
         let khr_external_memory = unsafe {
             let load_fn = |name: &std::ffi::CStr| {
                 std::mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
             };
-            vk::KhrExternalMemoryWin32Fn::load(load_fn)
-        };
-
-        let khr_external_memory = unsafe {
-            let load_fn = |name: &std::ffi::CStr| {
-                std::mem::transmute(instance.get_device_proc_addr(device.handle(), name.as_ptr()))
-            };
+            #[cfg(target_os = "windows")]
+            {
+                vk::KhrExternalMemoryWin32Fn::load(load_fn)
+            }
             #[cfg(target_os = "linux")]
-            vk::KhrExternalMemoryFdFn::load(load_fn)
+            {
+                vk::KhrExternalMemoryFdFn::load(load_fn)
+            }
         };
 
         Self {

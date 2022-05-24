@@ -9,7 +9,7 @@ use winapi::shared::minwindef::HMODULE;
 #[derive(Debug)]
 pub enum GLContext {
     Wgl(WGL),
-    Egl(super::EGL),
+    Egl(super::Egl),
 }
 
 impl GLContext {
