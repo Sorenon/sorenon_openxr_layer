@@ -5,6 +5,7 @@ pub mod loader_interfaces;
 mod graphics;
 pub mod wrappers;
 
+use log::trace;
 use openxr::sys as xr;
 
 pub const LAYER_NAME: &str = "XR_APILAYER_SORENON_compat_layer";
@@ -14,9 +15,7 @@ pub fn static_initialize() -> (
     loader_interfaces::FnCreateApiLayerInstance,
 ) {
     wrappers::initialize();
-    // let url = format!("vscode://vadimcn.vscode-lldb/launch/config?{{'request':'attach','pid':{}}}", std::process::id());
-    // std::process::Command::new("C:\\Program Files\\VSCodium\\VSCodium.exe").arg("--open-url").arg(url).output().unwrap();
-    // std::thread::sleep(std::time::Duration::from_millis(2000)); // Wait for debugger to attach
+    trace!("Initialize");
 
     (
         interceptors::get_instance_proc_addr,

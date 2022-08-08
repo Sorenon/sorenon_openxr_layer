@@ -7,7 +7,7 @@ lazy_static::lazy_static! {
         use vk::Format;
         [
             (ImageFormat::Rgba8Unorm, Format::R8G8B8A8_UNORM),
-            (ImageFormat::Rgba8UnormSrgb, Format::R8G8B8_SRGB),
+            (ImageFormat::Rgba8UnormSrgb, Format::R8G8B8A8_SRGB),
 
             (ImageFormat::Rgb10a2Unorm, Format::A2R10G10B10_UNORM_PACK32),
 
@@ -176,9 +176,12 @@ impl VulkanInterop {
                 .handle_type(vk::ExternalMemoryHandleTypeFlags::OPAQUE_WIN32)
                 .build();
 
-            self.khr_external_memory
-                .get_memory_win32_handle_khr(self.device.handle(), &win32_handle_info, &mut handle)
-                .result()?;
+            (self.khr_external_memory.get_memory_win32_handle_khr)(
+                self.device.handle(),
+                &win32_handle_info,
+                &mut handle,
+            )
+            .result()?;
             Ok(handle)
         }
 
@@ -191,9 +194,12 @@ impl VulkanInterop {
                 .handle_type(vk::ExternalMemoryHandleTypeFlags::OPAQUE_FD)
                 .build();
 
-            self.khr_external_memory
-                .get_memory_fd_khr(self.device.handle(), &handle_info, &mut handle)
-                .result()?;
+            (self.khr_external_memory.get_memory_fd_khr)(
+                self.device.handle(),
+                &handle_info,
+                &mut handle,
+            )
+            .result()?;
 
             Ok(handle)
         }

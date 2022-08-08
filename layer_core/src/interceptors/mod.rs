@@ -17,6 +17,8 @@ pub(crate) unsafe extern "system" fn get_instance_proc_addr(
     name: *const c_char,
     function: *mut Option<pfn::VoidFunction>,
 ) -> xr::Result {
+    trace!("Get proc addr");
+
     instance.run(|instance| instance_proc_addr(instance, name, &mut *function))
 }
 

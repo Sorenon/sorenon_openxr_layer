@@ -8,7 +8,7 @@ crate-type = ["cdylib"]
 bench = false
 
 [dependencies]
-openxr = { git = "https://github.com/Sorenon/openxrs", default-features = false, features = ["from_proc_addr"] }
+openxr = { git = "https://github.com/Sorenon/openxrs", default-features = false, branch = "layer" }
 log = "0.4"
-simplelog = "0.11"
+simplelog = "0.12"
 layer_core = { path = "../layer_core" }

@@ -7,7 +7,7 @@ use crate::wrappers::instance::{InnerInstance, InstanceWrapper, Runtime};
 use crate::wrappers::XrHandle;
 use crate::ToResult;
 
-use log::{debug, error, info};
+use log::{debug, error, info, trace};
 
 use openxr::sys as xr;
 use openxr::{ExtensionSet, InstanceExtensions, Result};
@@ -31,6 +31,8 @@ fn create_instance(
 ) -> Result<xr::Result> {
     let next_info = &unsafe { *layer_info.next_info };
 
+    trace!("Create instance 222222222222222");
+
     if unsafe { CStr::from_ptr(std::mem::transmute(next_info.layer_name.as_ptr())) }
         .to_string_lossy()
         != crate::LAYER_NAME
@@ -46,7 +48,7 @@ fn create_instance(
     debug!("Initializing OpenXR Entry");
 
     //Setup the OpenXR wrapper for the layer bellow us
-    let entry = unsafe { openxr::Entry::from_proc_addr(next_info.next_get_instance_proc_addr)? };
+    let entry = unsafe { openxr::Entry::from_get_instance_proc_addr(next_info.next_get_instance_proc_addr)? };
 
     let available_extensions = entry.enumerate_extensions()?;
 
@@ -131,7 +133,7 @@ fn create_instance(
 
     xr::Instance::all_wrappers().insert(*instance, Arc::new(wrapper));
 
-    info!("Instance created with name `{}`", unsafe {
+    info!("Instance created with name 2 2 2 2  222`{}`", unsafe {
         CStr::from_ptr(&instance_info.application_info.application_name as _).to_string_lossy()
     });
 

@@ -8,7 +8,6 @@ build = "build.rs"
 gl_generator = "0.14"
 
 [dependencies]
-ash = "0.35"
-glium = "0.31"
+ash = "0.37"
 lazy_static = "1.4"
 bimap = "0.6"

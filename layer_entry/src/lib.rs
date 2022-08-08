@@ -25,7 +25,7 @@ pub unsafe extern "system" fn xrNegotiateLoaderApiLayerInterface(
                 TerminalMode::Mixed,
                 ColorChoice::Auto,
             ),
-            WriteLogger::new(LevelFilter::Info, Config::default(), File::create(workspace_path.join("log.txt")).unwrap()),
+            WriteLogger::new(LevelFilter::Trace, Config::default(), File::create(workspace_path.join("log.txt")).unwrap()),
         ])
         .unwrap();
 

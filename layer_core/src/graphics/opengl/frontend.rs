@@ -91,6 +91,8 @@ impl SwapchainFrontend for SwapchainFrontendOpenGL {
         unsafe {
             //We need to wait for all OpenGL calls to finish execution before copying the image
             self.opengl.interop.gl.Finish();
+
+            //TODO use fences on android
         }
     }
 
