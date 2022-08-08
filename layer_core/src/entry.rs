@@ -48,7 +48,9 @@ fn create_instance(
     debug!("Initializing OpenXR Entry");
 
     //Setup the OpenXR wrapper for the layer bellow us
-    let entry = unsafe { openxr::Entry::from_get_instance_proc_addr(next_info.next_get_instance_proc_addr)? };
+    let entry = unsafe {
+        openxr::Entry::from_get_instance_proc_addr(next_info.next_get_instance_proc_addr)?
+    };
 
     let available_extensions = entry.enumerate_extensions()?;
 

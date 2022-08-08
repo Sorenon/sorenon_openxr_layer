@@ -15,7 +15,8 @@ use self::instance::InnerInstance;
 
 static mut INSTANCE_WRAPPERS: Option<DashMap<xr::Instance, Arc<instance::InstanceWrapper>>> = None;
 static mut SESSION_WRAPPERS: Option<DashMap<xr::Session, Arc<session::SessionWrapper>>> = None;
-static mut SWAPCHAIN_WRAPPERS: Option<DashMap<xr::Swapchain, Arc<swapchain::SwapchainWrapper>>> = None;
+static mut SWAPCHAIN_WRAPPERS: Option<DashMap<xr::Swapchain, Arc<swapchain::SwapchainWrapper>>> =
+    None;
 
 pub(crate) fn initialize() {
     unsafe {

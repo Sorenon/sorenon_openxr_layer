@@ -36,8 +36,8 @@ pub enum ImageFormat {
     Depth16Unorm,
 }
 
-#[cfg(target_os = "windows")] 
+#[cfg(target_os = "windows")]
 pub type InteropHandle = std::os::windows::raw::HANDLE;
 
-#[cfg(target_os = "linux")] 
+#[cfg(target_os = "linux")]
 pub type InteropHandle = i32;

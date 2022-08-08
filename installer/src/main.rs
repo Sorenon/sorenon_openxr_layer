@@ -66,7 +66,7 @@ fn manifest_path() -> Option<PathBuf> {
 }
 
 fn json_contents(shared_lib_path: &str) -> String {
-r#"{
+    r#"{
     "file_format_version" : "1.0.0",
     "api_layer": {
         "name": "XR_APILAYER_SORENON_compat_layer",

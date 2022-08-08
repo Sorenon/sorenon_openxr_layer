@@ -1,4 +1,4 @@
-use std::{ffi::CStr, fs::File, sync::atomic::AtomicBool, path::Path};
+use std::{ffi::CStr, fs::File, path::Path, sync::atomic::AtomicBool};
 
 use layer_core::loader_interfaces::*;
 use log::{debug, error, info};
@@ -25,7 +25,11 @@ pub unsafe extern "system" fn xrNegotiateLoaderApiLayerInterface(
                 TerminalMode::Mixed,
                 ColorChoice::Auto,
             ),
-            WriteLogger::new(LevelFilter::Trace, Config::default(), File::create(workspace_path.join("log.txt")).unwrap()),
+            WriteLogger::new(
+                LevelFilter::Trace,
+                Config::default(),
+                File::create(workspace_path.join("log.txt")).unwrap(),
+            ),
         ])
         .unwrap();
 

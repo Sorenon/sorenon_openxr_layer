@@ -1,8 +1,8 @@
 mod entry;
+mod graphics;
 pub mod interceptors;
 #[allow(dead_code)]
 pub mod loader_interfaces;
-mod graphics;
 pub mod wrappers;
 
 use log::trace;

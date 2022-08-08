@@ -295,7 +295,9 @@ impl SwapchainBackendVulkan {
                     std::slice::from_ref(&set),
                     &[],
                 );
-                vk_backend.device.cmd_draw(command_buffer, 3, image_info.layers, 0, 0);
+                vk_backend
+                    .device
+                    .cmd_draw(command_buffer, 3, image_info.layers, 0, 0);
                 vk_backend.device.cmd_end_render_pass(command_buffer);
                 vk_backend
                     .device
