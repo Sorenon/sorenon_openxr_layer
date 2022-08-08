@@ -209,11 +209,10 @@ fn create_session(
                     log::info!("b {:?}", backend_format);
                     let vulkan_format = ash::vk::Format::from_raw(*backend_format as i32);
                     graphics_interop::ImageFormat::from_vk(vulkan_format)
-                        .map(|format| {
+                        .and_then(|format| {
                             log::info!("f{:?}", format);
                             format.to_gl()
                         })
-                        .flatten()
                         .map(|f| f as i64)
                 })
                 .collect::<Vec<_>>()

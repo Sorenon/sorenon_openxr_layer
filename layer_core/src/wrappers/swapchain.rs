@@ -5,7 +5,7 @@ use std::{
 };
 
 use dashmap::DashMap;
-use log::error;
+
 use openxr::sys as xr;
 
 use super::{instance::InnerInstance, session::SessionWrapper, XrHandle, XrWrapper};

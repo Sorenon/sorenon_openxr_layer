@@ -13,7 +13,7 @@ fn main() {
     let mut file_output = File::create(&dest.join("gl_bindings.rs")).unwrap();
     generate_gl_bindings(&mut file_output);
     #[cfg(windows)]
-    generate_wgl_bindings(&dest);
+    generate_wgl_bindings(dest);
 }
 
 fn generate_gl_bindings<W>(dest: &mut W)

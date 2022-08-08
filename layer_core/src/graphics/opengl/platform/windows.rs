@@ -57,7 +57,7 @@ impl WGL {
         Self {
             h_dc,
             h_glrc,
-            gl_library: gl_library,
+            gl_library,
         }
     }
 
